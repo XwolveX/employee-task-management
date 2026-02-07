@@ -192,7 +192,7 @@ router.post('/ValidateOTPCode', async (req, res) => {
             });
         }
         } catch (error) {
-            console.error(' [ValidateAccessCode Error]:', error);
+            console.error(' [ValidateOTPCode Error]:', error);
             res.status(500).json({
                 success: false,
                 message: 'Something Wrong when validate',

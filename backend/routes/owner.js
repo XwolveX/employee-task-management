@@ -124,7 +124,7 @@ router.post('/ValidateOTPCode',async (req,res)=> {
         });
         if (wrongAttempts >= 5) {
             await db.collection('owners').doc(phoneNumber).update({
-                accessCode: '',
+                OTPCode: '',
                 blocked: true,
                 blockedAt: new Date().toISOString()
             });
