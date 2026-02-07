@@ -1,7 +1,1 @@
-POST http://localhost:5000/api/owner/ValidateOTPCode
-Content-Type: application/json
-
-{
-"phoneNumber": "+84901234567",
-"OTPCode": "416574"
-}
+GET http://localhost:5000/api/owner/GetAllEmployees

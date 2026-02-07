@@ -136,7 +136,203 @@ router.post('/LoginEmail', async (req,res) => {
         });
     }
 });
+router.post('/ValidateOTPCode', async (req, res) => {
+    try {
+        const {email, OTPCode} = req.body;
+        //validate email
+        if (!email || !OTPCode) {
+            return res.status(400).json({
+                success: false,
+                message: 'missing email or OTP code'
+            });
+        }
+        const snapshot = await db.collection('employees')
+            .where('email', '==', email)
+            .get();
 
+        if (snapshot.empty) {
+            return res.status(404).json({
+                success: false,
+                message: 'Email is not exist'
+            });
+        }
+        const employeeDoc = snapshot.docs[0];
+        const employeeData = employeeDoc.data();
+        //check OTP code is expired or not
+        const now = new Date();
+        const expiresAt = new Date(employeeData.codeExpiresAt);
+        if (now > expiresAt) {
+            return res.status(400).json({
+                success: false,
+                message: 'OTP code is expired. please resend the OTP code.'
+            });
+        }
+        if (employeeData.OTPCode === OTPCode) {
+            await db.collection('employees').doc(employeeDoc.id).update({
+                OTPCode: '',
+                lastLogin: new Date().toISOString()
+            });
+            console.log(`[EmployeeLogin] Login successfully: ${email}`);// test log
+            return res.json({
+                success: true,
+                message: 'Login successfully',
+                data: {
+                    employeeId: employeeData.employeeId,
+                    name: employeeData.name,
+                    email: employeeData.email,
+                    department: employeeData.department,
+                    role: 'employee'
+                }
+            });
+
+    }   else {
+            return res.status(400).json({
+                success: false,
+                message: 'OTP code is not correct'
+            });
+        }
+        } catch (error) {
+            console.error(' [ValidateAccessCode Error]:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Something Wrong when validate',
+                error: error.message
+            });
+        }
+    });
+
+router.post('/GetProfile', async (req, res) => {
+    try {
+        const { employeeId } = req.body;
+
+        if (!employeeId ) {
+            return res.status(400).json({
+                success: false,
+                message: 'employeeId is missing'
+            });
+        }
+        const doc = await db.collection('employees').doc(employeeId).get();
+        if (!doc.exists) {
+            return res.status(404).json({
+                success: false,
+                message: 'employee not found'
+            });
+        }
+        const employeeData = doc.data();
+        //object for employee
+        const profileData = {
+            employeeId: employeeData.employeeId,
+            name: employeeData.name,
+            email: employeeData.email,
+            department: employeeData.department,
+            username: employeeData.username,
+            isSetup: employeeData.isSetup,
+            createdAt: employeeData.createdAt,
+            lastLogin: employeeData.lastLogin || null,
+            tasks: employeeData.tasks || []
+        };
+        console.log(`[GetProfile] Employee: ${employeeId}`);
+        res.json({
+            success: true,
+            employee: profileData
+        });
+    } catch (error) {
+        console.error('[GetProfile Error]:', error);
+        res.status(500).json({
+            success: false,
+            message: 'error when get employee profile',
+            error: error.message
+        });
+    }
+});
+
+router.post('/UpdateProfile', async (req, res) => {
+    try {
+        const { employeeId, name, email, department } = req.body;
+
+        if (!employeeId) {
+            return res.status(400).json({
+                success: false,
+                message: 'employeeId is missing'
+            });
+        }
+        //check if employee is exits or not
+        const doc = await db.collection('employees').doc(employeeId).get();
+
+        if (!doc.exists) {
+            return res.status(404).json({
+                success: false,
+                message: 'employee not found'
+            });
+        }
+
+        const updateData = {};// just update the field which we change, not null
+
+        if (name) {
+            if (name.trim().length < 2) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'name must have more than 2 character'
+                });
+            }
+            updateData.name = name.trim();
+        }
+
+        if (email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Email not available'
+                });
+            }
+            // check if mail is exits
+            const emailCheck = await db.collection('employees')
+                .where('email', '==', email)
+                .get();
+
+            if (!emailCheck.empty && emailCheck.docs[0].id !== employeeId) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'The email is already in use by another employee'
+                });
+            }
+
+            updateData.email = email.toLowerCase();
+        }
+
+        if (department) {
+            updateData.department = department.trim();
+        }
+        updateData.updatedAt = new Date().toISOString();
+
+        if (Object.keys(updateData).length === 1) {
+            return res.status(400).json({
+                success: false,
+                message: 'nothing update'
+            });
+        }
+
+        // update on firebase
+        await db.collection('employees').doc(employeeId).update(updateData);
+
+        console.log(`[UpdateProfile] Employee ${employeeId} updated:`, updateData);//log check
+
+        res.json({
+            success: true,
+            message: 'update successfully',
+            updatedFields: Object.keys(updateData).filter(key => key !== 'updatedAt')
+        });
+
+    } catch (error) {
+        console.error('[UpdateProfile Error]:', error);
+        res.status(500).json({
+            success: false,
+            message: 'error when update profile',
+            error: error.message
+        });
+    }
+});
 router.get('/test', (req, res) => {
     res.json({ message: 'Employee routes working' });
 });

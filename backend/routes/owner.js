@@ -148,7 +148,297 @@ router.post('/ValidateOTPCode',async (req,res)=> {
     }
 });
 
+router.post('/CreateEmployee', async (req, res) => {
+    try {
+        // Get data from request
+        const { name, email, department } = req.body;
 
+        // Validate required fields
+        if (!name || !email || !department) {
+            return res.status(400).json({
+                success: false,
+                message: 'missing required information (name, email, department)'
+            });
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({
+                success: false,
+                message: 'invalid email format'
+            });
+        }
+
+        // Check if email already exists
+        const emailCheck = await db.collection('employees')
+            .where('email', '==', email.toLowerCase())
+            .get();
+
+        if (!emailCheck.empty) {
+            return res.status(400).json({
+                success: false,
+                message: 'email already exists in system'
+            });
+        }
+
+        // Generate unique IDs
+        const employeeId = uuidv4();
+        const setupToken = uuidv4();
+
+        // Save employee to Firebase
+        await db.collection('employees').doc(employeeId).set({
+            employeeId: employeeId,
+            name: name.trim(),
+            email: email.toLowerCase(),
+            department: department.trim(),
+            setupToken: setupToken,
+            isSetup: false,
+            createdAt: new Date().toISOString(),
+            tasks: []
+        });
+
+        // Create setup link
+        const setupLink = `http://localhost:3000/employee/setup/${setupToken}`;
+
+        // Send email (MOCK for testing)
+        // await emailTransporter.sendMail({
+        //     from: process.env.EMAIL_USER,
+        //     to: email,
+        //     subject: 'Welcome! Setup your account',
+        //     html: `
+        //         <h2>Welcome ${name}!</h2>
+        //         <p>You have been added to Employee Management System.</p>
+        //         <p>Click the link below to setup your account:</p>
+        //         <a href="${setupLink}">Setup Account</a>
+        //         <p>Department: ${department}</p>
+        //     `
+        // });
+
+        console.log(`[MOCK EMAIL] To: ${email}`);
+        console.log(`Setup Link: ${setupLink}`);
+        console.log(`[CreateEmployee] Created: ${name} (${email})`);
+
+        res.json({
+            success: true,
+            employeeId: employeeId,
+            message: 'employee created and setup email sent',
+            setupLink: setupLink // For testing only
+        });
+
+    } catch (error) {
+        console.error('[CreateEmployee Error]:', error);
+        res.status(500).json({
+            success: false,
+            message: 'error when creating employee',
+            error: error.message
+        });
+    }
+});
+router.post('/GetEmployee', async (req, res) => {
+    try {
+        const { employeeId } = req.body;
+
+        if (!employeeId) {
+            return res.status(400).json({
+                success: false,
+                message: 'employeeId is missing'
+            });
+        }
+
+        const doc = await db.collection('employees').doc(employeeId).get();
+
+        if (!doc.exists) {
+            return res.status(404).json({
+                success: false,
+                message: 'employee not found'
+            });
+        }
+
+        const employeeData = doc.data();
+
+        // Remove sensitive data
+        delete employeeData.password;
+        delete employeeData.OTPCode;
+        delete employeeData.setupToken;
+
+        res.json({
+            success: true,
+            employee: employeeData
+        });
+
+    } catch (error) {
+        console.error('[GetEmployee Error]:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+router.get('/GetAllEmployees', async (req, res) => {
+    try {
+        const snapshot = await db.collection('employees').get();
+
+        const employees = [];
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+
+            // Remove sensitive information
+            delete data.password;
+            delete data.OTPCode;
+            delete data.setupToken;
+
+            employees.push(data);
+        });
+
+        console.log(`[GetAllEmployees] Found ${employees.length} employees`);
+
+        res.json({
+            success: true,
+            employees: employees,
+            count: employees.length
+        });
+
+    } catch (error) {
+        console.error('[GetAllEmployees Error]:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+router.post('/DeleteEmployee', async (req, res) => {
+    try {
+        const { employeeId } = req.body;
+
+        if (!employeeId) {
+            return res.status(400).json({
+                success: false,
+                message: 'employeeId is missing'
+            });
+        }
+
+        // Check if employee exists
+        const doc = await db.collection('employees').doc(employeeId).get();
+
+        if (!doc.exists) {
+            return res.status(404).json({
+                success: false,
+                message: 'employee not found'
+            });
+        }
+
+        // Delete document
+        await db.collection('employees').doc(employeeId).delete();
+
+        console.log(`[DeleteEmployee] Deleted: ${employeeId}`);
+
+        res.json({
+            success: true,
+            message: 'employee deleted successfully'
+        });
+
+    } catch (error) {
+        console.error('[DeleteEmployee Error]:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+router.post('/UpdateEmployee', async (req, res) => {
+    try {
+        const { employeeId, name, email, department } = req.body;
+
+        if (!employeeId) {
+            return res.status(400).json({
+                success: false,
+                message: 'employeeId is missing'
+            });
+        }
+
+        // Check if employee exists
+        const doc = await db.collection('employees').doc(employeeId).get();
+
+        if (!doc.exists) {
+            return res.status(404).json({
+                success: false,
+                message: 'employee not found'
+            });
+        }
+
+        // Build update object
+        const updateData = {};
+
+        if (name) {
+            if (name.trim().length < 2) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'name must have at least 2 characters'
+                });
+            }
+            updateData.name = name.trim();
+        }
+
+        if (email) {
+            // Validate email format
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'invalid email format'
+                });
+            }
+
+            // Check duplicate email (exclude current employee)
+            const emailCheck = await db.collection('employees')
+                .where('email', '==', email.toLowerCase())
+                .get();
+
+            if (!emailCheck.empty && emailCheck.docs[0].id !== employeeId) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'email already exists'
+                });
+            }
+
+            updateData.email = email.toLowerCase();
+        }
+
+        if (department) {
+            updateData.department = department.trim();
+        }
+
+        updateData.updatedAt = new Date().toISOString();
+
+        // Check if there's anything to update
+        if (Object.keys(updateData).length === 1) {
+            return res.status(400).json({
+                success: false,
+                message: 'no data to update'
+            });
+        }
+
+        // Update in Firebase
+        await db.collection('employees').doc(employeeId).update(updateData);
+
+        console.log(`[UpdateEmployee] Updated: ${employeeId}`);
+
+        res.json({
+            success: true,
+            message: 'employee updated successfully'
+        });
+
+    } catch (error) {
+        console.error('[UpdateEmployee Error]:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
 router.get('/test', (req, res) => {
     res.json({ message: 'Owner routes working!' });
 });
