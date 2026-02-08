@@ -244,16 +244,24 @@ function EmployeeDashboard() {
                     {showChat ? '✕ Close Chat' : '💬 Chat with Owner'}
                 </button>
             </div>
-
-            {/* Chat Component */}
+            {/* Chat Modal */}
             {showChat && (
-                <div style={styles.chatContainer}>
-                    <Chat
-                        roomId={`room_owner_${employeeId}`}
-                        currentUserId={employeeId}
-                        currentUserName={employeeName}
-                        otherUserName="Owner"
-                    />
+                <div style={styles.chatModal}>
+                    <div style={styles.chatModalContent}>
+                        <button
+                            onClick={() => setShowChat(false)}
+                            style={styles.closeButton}
+                        >
+                            ✕ Close
+                        </button>
+
+                        <Chat
+                            roomId={`room_owner_${employeeId}`}
+                            currentUserId={employeeId}
+                            currentUserName={employeeName}
+                            otherUserName="Owner"
+                        />
+                    </div>
                 </div>
             )}
         </div>
@@ -405,6 +413,38 @@ const styles = {
     },
     chatContainer: {
         marginTop: '20px'
+    },
+    chatModal: {
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1000
+    },
+    chatModalContent: {
+        backgroundColor: 'white',
+        borderRadius: '10px',
+        width: '90%',
+        maxWidth: '600px',
+        position: 'relative',
+        boxShadow: '0 5px 15px rgba(0,0,0,0.3)'
+    },
+    closeButton: {
+        position: 'absolute',
+        top: '10px',
+        right: '10px',
+        padding: '8px 12px',
+        backgroundColor: '#f44336',
+        color: 'white',
+        border: 'none',
+        borderRadius: '5px',
+        cursor: 'pointer',
+        zIndex: 1001
     }
 };
 
