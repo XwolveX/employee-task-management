@@ -1,6 +1,8 @@
 Employee Task Management - Setup Guide
 
 This project is a full-stack application consisting of a Node.js/Express Backend and a React Frontend. It uses Firebase for data management and Socket.io for real-time communication.
+link login for employee:http://localhost:3000/employee/login
+link login for owner: http://localhost:3000/owner/login
 1. Prerequisites
 
     Node.js: Version 16.x or higher installed.
