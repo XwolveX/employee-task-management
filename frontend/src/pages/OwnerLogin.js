@@ -36,7 +36,7 @@ function OwnerLogin() {
         setIsLoading(true);
 
         try {
-            const response = await ownerAPI.createAccessCode(phoneNum);
+            const response = await ownerAPI.createOTPCode(phoneNum);
 
             if (response.data.success) {
                 alert('OTP code has been sent to your phone!');
@@ -69,7 +69,7 @@ function OwnerLogin() {
         setIsLoading(true);
 
         try {
-            const response = await ownerAPI.validateAccessCode(phoneNum, otpValue);
+            const response = await ownerAPI.validateOTPCode(phoneNum, otpValue);
 
             if (response.data.success) {
                 // Save to localStorage

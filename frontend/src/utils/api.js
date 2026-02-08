@@ -14,10 +14,10 @@ export const ownerAPI = {
     },
 
     // validate OTP
-    validateAccessCode: (phoneNumber, accessCode) => {
+    validateOTPCode: (phoneNumber, OTPCode) => {
         return axios.post(`${API_BASE_URL}/owner/ValidateOTPCode`, {
             phoneNumber,
-            accessCode
+            OTPCode
         });
     },
 
