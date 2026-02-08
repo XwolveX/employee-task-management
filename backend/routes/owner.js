@@ -46,8 +46,8 @@ router.post('/CreateNewOTPCode', async (req, res) => {
         });
         // await twilioClient.messages.create({
         //     body: `your otp code is: ${otpCode}. it will expire in 5 minutes.`,
-        //     from: process.env.TWILIO_PHONE, //sent from twilio number
-        //     to: phoneNumber // sent to user number
+        //     from: process.env.TWILIO_PHONE,
+        //     to: phoneNumber
         // });
         console.log(`📱 [MOCK SMS] To: ${phoneNumber}, Code: ${otpCode}`);
         res.json({

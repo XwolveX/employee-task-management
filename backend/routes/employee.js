@@ -121,7 +121,12 @@ router.post('/LoginEmail', async (req,res) => {
             codeExpiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString()
         });
         //sent mail
-        // await emailTransporter.sendMail({    });
+        // await emailTransporter.sendMail({
+        //     from: process.env.EMAIL_USER,
+        //     to: email,
+        //     subject: 'OTP verify login',
+        //     text: `Your OTP code is: ${otpCode}. code will expired in 10 minutes.`
+        // });
         console.log(`[MOCK EMAIL] To: ${email}, Code: ${otpCode}`); //testing
         res.json({
             success: true,
