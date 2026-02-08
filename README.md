@@ -13,7 +13,18 @@ CHECK you log of backend to get OTP code for sms and mail if dont use twilio and
 
     Firebase Account: A project created in the Firebase Console.
 
-2. Backend Configuration
+    Create .env file if not yet
+   PORT=5000
+
+    # Twilio
+    TWILIO_SID=
+    TWILIO_AUTH_TOKEN=
+    TWILIO_PHONE=
+    
+    # Gmail
+    EMAIL_USER=
+    EMAIL_PASS=
+    3. Backend Configuration
 
     Navigate to the backend directory:
     Bash
@@ -36,7 +47,7 @@ CHECK you log of backend to get OTP code for sms and mail if dont use twilio and
 
     node server.js
 
-3. Frontend Configuration
+4. Frontend Configuration
 
     Navigate to the frontend directory:
     Bash
@@ -53,7 +64,7 @@ CHECK you log of backend to get OTP code for sms and mail if dont use twilio and
 
     npm start
 
-4. Key Project Features
+5. Key Project Features
 
     Real-time Chat: Managed via Socket.io in server.js using join_room and send_message events.
 
@@ -65,7 +76,7 @@ CHECK you log of backend to get OTP code for sms and mail if dont use twilio and
 
     Health Check: You can verify the server status by visiting http://localhost:5000/health.
 
-5. Troubleshooting
+6. Troubleshooting
 
     Port Conflicts: Ensure ports 3000 and 5000 are not being used by other processes.
 
