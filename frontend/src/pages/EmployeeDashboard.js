@@ -256,7 +256,7 @@ function EmployeeDashboard() {
                         </button>
 
                         <Chat
-                            roomId={`room_owner_${employeeId}`}
+                            roomId={`chat_room_${employeeId}`}
                             currentUserId={employeeId}
                             currentUserName={employeeName}
                             otherUserName="Owner"

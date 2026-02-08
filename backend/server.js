@@ -30,10 +30,13 @@ io.on('connection',(socket) => {
         });
 
     socket.on('send_message', (data) => {
-        console.log('Message:', data);
-        // Broadcast message to every one in room
-        io.to(data.room).emit('receive_message', data);
-        });
+        console.log('Message received on server:', data);
+        if (data.room) {
+            io.to(data.room).emit('receive_message', data);
+        } else {
+            console.log('Error: No room specified in message data');
+        }
+    });
     socket.on('disconnect', () => {
         console.log('Client disconnected:', socket.id);
         });

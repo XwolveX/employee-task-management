@@ -350,7 +350,7 @@ function Dashboard() {
                         </button>
 
                         <Chat
-                            roomId={`room_${userPhone}_${selectedEmployee.employeeId}`}
+                            roomId={`chat_room_${selectedEmployee.employeeId}`}
                             currentUserId={userPhone}
                             currentUserName="Owner"
                             otherUserName={selectedEmployee.name}
