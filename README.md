@@ -1,4 +1,3 @@
-Here is the comprehensive guide to running the Employee Task Management project in English:
 Employee Task Management - Setup Guide
 
 This project is a full-stack application consisting of a Node.js/Express Backend and a React Frontend. It uses Firebase for data management and Socket.io for real-time communication.
