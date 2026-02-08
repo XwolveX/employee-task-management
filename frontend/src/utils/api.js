@@ -57,6 +57,15 @@ export const ownerAPI = {
             email,
             department
         });
+    },
+    // Assign task
+    assignTask: (employeeId, title, description, deadline) => {
+        return axios.post(`${API_BASE_URL}/owner/AssignTask`, {
+            employeeId,
+            title,
+            description,
+            deadline
+        });
     }
 };
 
@@ -100,6 +109,21 @@ export const employeeAPI = {
             name,
             email,
             department
+        });
+    },
+    //get task
+    getTasks: (employeeId) => {
+        return axios.post(`${API_BASE_URL}/employee/GetTasks`, {
+            employeeId
+        });
+    },
+
+    // Update the status of a specific task
+    updateTaskStatus: (employeeId, taskId, newStatus) => {
+        return axios.post(`${API_BASE_URL}/employee/UpdateTaskStatus`, {
+            employeeId,
+            taskId,
+            status: newStatus
         });
     }
 };

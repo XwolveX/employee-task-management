@@ -8,6 +8,7 @@ function EmployeeDashboard() {
     const [isLoading, setIsLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [showChat, setShowChat] = useState(false);
+    const [tasks, setTasks] = useState([]);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -33,7 +34,7 @@ function EmployeeDashboard() {
         setIsLoading(true);
         try {
             const response = await employeeAPI.getProfile(employeeId);
-
+            const tasksResponse = await employeeAPI.getTasks(employeeId);
             if (response.data.success) {
                 const emp = response.data.employee;
                 setProfile(emp);
@@ -43,15 +44,29 @@ function EmployeeDashboard() {
                     department: emp.department
                 });
             }
+            if (tasksResponse.data.success) {
+                setTasks(tasksResponse.data.tasks || []);
+            }
 
         } catch (error) {
-            console.error('Error fetching profile:', error);
-            alert('Failed to load profile');
+            console.error('Error fetching data:', error);
+            alert('Failed to load data');
         } finally {
             setIsLoading(false);
         }
     };
-
+    const handleStatusUpdate = async (taskId, newStatus) => {
+        try {
+            const response = await employeeAPI.updateTaskStatus(employeeId, taskId, newStatus);
+            if (response.data.success) {
+                alert(`Task marked as ${newStatus}`);
+                fetchProfile();
+            }
+        } catch (error) {
+            console.error('Error updating task status:', error);
+            alert('Failed to update status');
+        }
+    };
     // Function: Update profile
     const handleUpdateProfile = async (e) => {
         e.preventDefault();
@@ -228,12 +243,37 @@ function EmployeeDashboard() {
                 )}
             </div>
 
-            {/* Tasks Card (Placeholder) */}
+            {/* Tasks Card */}
             <div style={styles.tasksCard}>
-                <h3>My Tasks</h3>
-                <p style={styles.emptyMessage}>
-                    📋 No tasks assigned yet.
-                </p>
+                <h3 style={{ marginBottom: '20px' }}>My Assigned Tasks</h3>
+                {tasks.length === 0 ? (
+                    <p style={styles.emptyMessage}>📋 No tasks assigned yet.</p>
+                ) : (
+                    <div style={styles.taskList}>
+                        {tasks.map((task) => (
+                            <div key={task.taskId} style={styles.taskItem}>
+                                <div style={styles.taskInfo}>
+                                    <h4 style={styles.taskTitle}>{task.title}</h4>
+                                    <p style={styles.taskDesc}>{task.description}</p>
+                                    <div style={styles.taskMeta}>
+                                        <span>📅 Deadline: {new Date(task.deadline).toLocaleDateString()}</span>
+                                        <span style={getStatusStyle(task.status)}>
+                                {task.status.toUpperCase()}
+                            </span>
+                                    </div>
+                                </div>
+                                {task.status !== 'completed' && (
+                                    <button
+                                        onClick={() => handleStatusUpdate(task.taskId, 'completed')}
+                                        style={styles.completeButton}
+                                    >
+                                        Mark as Done
+                                    </button>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
             {/* Chat Button */}
             <div style={styles.chatSection}>
@@ -267,7 +307,15 @@ function EmployeeDashboard() {
         </div>
     );
 }
-
+const getStatusStyle = (status) => ({
+    padding: '4px 8px',
+    borderRadius: '4px',
+    fontSize: '12px',
+    fontWeight: 'bold',
+    marginLeft: '15px',
+    backgroundColor: status === 'completed' ? '#e8f5e9' : '#fff3e0',
+    color: status === 'completed' ? '#2e7d32' : '#f57c00',
+});
 const styles = {
     container: {
         maxWidth: '900px',
@@ -445,6 +493,49 @@ const styles = {
         borderRadius: '5px',
         cursor: 'pointer',
         zIndex: 1001
+    },
+    taskList: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '15px'
+    },
+    taskItem: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '15px',
+        border: '1px solid #eee',
+        borderRadius: '8px',
+        backgroundColor: '#fafafa'
+    },
+    taskInfo: {
+        flex: 1
+    },
+    taskTitle: {
+        margin: '0 0 5px 0',
+        color: '#333'
+    },
+    taskDesc: {
+        margin: '0 0 10px 0',
+        color: '#666',
+        fontSize: '14px'
+    },
+    taskMeta: {
+        display: 'flex',
+        alignItems: 'center',
+        fontSize: '12px',
+        color: '#888'
+    },
+    completeButton: {
+        padding: '8px 16px',
+        backgroundColor: '#4CAF50',
+        color: 'white',
+        border: 'none',
+        borderRadius: '5px',
+        cursor: 'pointer',
+        fontSize: '14px',
+        fontWeight: 'bold',
+        marginLeft: '15px'
     }
 };
 

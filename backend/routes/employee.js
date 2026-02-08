@@ -341,5 +341,49 @@ router.post('/UpdateProfile', async (req, res) => {
 router.get('/test', (req, res) => {
     res.json({ message: 'Employee routes working' });
 });
+// Get all tasks for a specific employee
+router.post('/GetTasks', async (req, res) => {
+    try {
+        const { employeeId } = req.body;
+        if (!employeeId) {
+            return res.status(400).json({ success: false, message: 'Missing employeeId' });
+        }
 
+        const doc = await db.collection('employees').doc(employeeId).get();
+        if (!doc.exists) {
+            return res.status(404).json({ success: false, message: 'Employee not found' });
+        }
+
+        const tasks = doc.data().tasks || [];
+        res.json({ success: true, tasks });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Update status of a specific task
+router.post('/UpdateTaskStatus', async (req, res) => {
+    try {
+        const { employeeId, taskId, status } = req.body;
+
+        const employeeRef = db.collection('employees').doc(employeeId);
+        const doc = await employeeRef.get();
+
+        if (!doc.exists) return res.status(404).json({ success: false, message: 'Employee not found' });
+
+        let tasks = doc.data().tasks || [];
+        const taskIndex = tasks.findIndex(t => t.taskId === taskId);
+
+        if (taskIndex === -1) return res.status(404).json({ success: false, message: 'Task not found' });
+
+        // Update status and timestamp
+        tasks[taskIndex].status = status;
+        tasks[taskIndex].updatedAt = new Date().toISOString();
+
+        await employeeRef.update({ tasks });
+        res.json({ success: true, message: 'Status updated' });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
 module.exports = router;

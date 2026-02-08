@@ -487,5 +487,55 @@ router.get('/chat-history/:roomId', async (req, res) => {
         });
     }
 });
+router.post('/AssignTask', async (req, res) => {
+    try {
+        const { employeeId, title, description, deadline } = req.body;
 
+        // Validation
+        if (!employeeId || !title || !deadline) {
+            return res.status(400).json({
+                success: false,
+                message: 'Missing required fields: employeeId, title, or deadline'
+            });
+        }
+
+        const newTask = {
+            taskId: uuidv4(),
+            title: title.trim(),
+            description: description ? description.trim() : '',
+            deadline: deadline,
+            status: 'pending', // Default status
+            assignedAt: new Date().toISOString()
+        };
+
+        const employeeRef = db.collection('employees').doc(employeeId);
+        const doc = await employeeRef.get();
+
+        if (!doc.exists) {
+            return res.status(404).json({
+                success: false,
+                message: 'Employee not found'
+            });
+        }
+
+        // Update tasks array in employee document
+        const currentTasks = doc.data().tasks || [];
+        await employeeRef.update({
+            tasks: [...currentTasks, newTask]
+        });
+
+        res.json({
+            success: true,
+            message: 'Task assigned successfully',
+            task: newTask
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: error.message
+        });
+    }
+});
 module.exports = router;

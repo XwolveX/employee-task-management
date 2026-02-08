@@ -12,6 +12,8 @@ function Dashboard() {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedEmployee, setSelectedEmployee] = useState(null);
     const [showChat, setShowChat] = useState(false);
+    const [showTaskForm, setShowTaskForm] = useState(false);
+    const [taskData, setTaskData] = useState({ title: '', description: '', deadline: '' });
     // Form data
     const [formData, setFormData] = useState({
         name: '',
@@ -104,7 +106,26 @@ function Dashboard() {
             alert('Failed to delete employee');
         }
     };
+    const handleAssignTask = async (e) => {
+        e.preventDefault();
+        try {
+            const response = await ownerAPI.assignTask(
+                selectedEmployee.employeeId,
+                taskData.title,
+                taskData.description,
+                taskData.deadline
+            );
 
+            if (response.data.success) {
+                alert('Task assigned successfully!');
+                setShowTaskForm(false);
+                setTaskData({ title: '', description: '', deadline: '' });
+                fetchEmployees();
+            }
+        } catch (error) {
+            alert(error.response?.data?.message || 'Failed to assign task');
+        }
+    };
     // Function: open edit form
     const handleEditClick = (employee) => {
         setEditingEmployee(employee);
@@ -156,6 +177,7 @@ function Dashboard() {
         emp.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.department.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
     return (
         <div style={styles.container}>
             {/* Header */}
@@ -191,7 +213,39 @@ function Dashboard() {
                     🔄 Refresh
                 </button>
             </div>
-
+            {/* showTask Form */}
+            {showTaskForm && (
+                <div style={styles.formCard}>
+                    <h3>Assign Task to: {selectedEmployee?.name}</h3>
+                    <form onSubmit={handleAssignTask} style={styles.formLayout}>
+                        <input
+                            type="text"
+                            placeholder="Task Title"
+                            value={taskData.title}
+                            onChange={(e) => setTaskData({...taskData, title: e.target.value})}
+                            style={styles.input}
+                            required
+                        />
+                        <textarea
+                            placeholder="Task Description"
+                            value={taskData.description}
+                            onChange={(e) => setTaskData({...taskData, description: e.target.value})}
+                            style={{...styles.input, minHeight: '80px'}}
+                        />
+                        <input
+                            type="date"
+                            value={taskData.deadline}
+                            onChange={(e) => setTaskData({...taskData, deadline: e.target.value})}
+                            style={styles.input}
+                            required
+                        />
+                        <div style={styles.buttonGroup}>
+                            <button type="submit" style={styles.submitButton}>Assign Task</button>
+                            <button type="button" onClick={() => setShowTaskForm(false)} style={styles.cancelButton}>Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            )}
             {/* Add Employee Form */}
             {showAddForm && (
                 <div style={styles.formCard}>
@@ -329,7 +383,16 @@ function Dashboard() {
                                         }}
                                         style={styles.chatButton}
                                     >
-                                        💬 Chat
+                                        💬
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setSelectedEmployee(emp);
+                                            setShowTaskForm(true);
+                                        }}
+                                        style={styles.assignButton}
+                                    >
+                                        📝
                                     </button>
                                 </td>
                             </tr>
@@ -583,7 +646,16 @@ const styles = {
         borderRadius: '5px',
         cursor: 'pointer',
         zIndex: 1001
-    }
+    },
+    assignButton:{
+        padding: '6px 12px',
+        backgroundColor: '#FFA500',
+        color: 'white',
+        border: 'none',
+        borderRadius: '4px',
+        cursor: 'pointer',
+        marginLeft: '5px'
+    },
 };
 
 export default Dashboard;
