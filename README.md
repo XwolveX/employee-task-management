@@ -81,3 +81,21 @@ CHECK you log of backend to get OTP code for sms and mail if dont use twilio and
     Port Conflicts: Ensure ports 3000 and 5000 are not being used by other processes.
 
     Firebase Connection: Ensure your Firebase Admin SDK configuration in backend/config/firebase.js is correctly linked to your service account key.
+7.screenshot of application
+Owner screen
+<img width="2482" height="1375" alt="image" src="https://github.com/user-attachments/assets/9af623f5-d16a-4084-baa1-bb696a2e6ffc" />
+<img width="1929" height="504" alt="image" src="https://github.com/user-attachments/assets/70d78fa4-814c-4640-8135-71cf1cd3ac3b" />
+<img width="2092" height="1302" alt="image" src="https://github.com/user-attachments/assets/2d0e3b9a-bc16-4642-9180-0f508f63fae0" />
+<img width="1934" height="1245" alt="image" src="https://github.com/user-attachments/assets/c839fdb9-aa8e-402e-93d8-a3fdba29639d" />
+<img width="2010" height="549" alt="image" src="https://github.com/user-attachments/assets/81eb3e8b-8b80-4ee8-b7be-db291ed41176" />
+Employee Screen
+<img width="2482" height="1376" alt="image" src="https://github.com/user-attachments/assets/2628e325-363e-44a7-8c4f-d9ebc058050b" />
+<img width="2480" height="1376" alt="image" src="https://github.com/user-attachments/assets/8d51c726-2fc1-4eed-b5d7-e57314579ca1" />
+<img width="1468" height="1049" alt="image" src="https://github.com/user-attachments/assets/7890b1ef-d5e2-4392-a136-2f677a7fb13b" />
+Chat socket
+
+<img width="1025" height="1031" alt="image" src="https://github.com/user-attachments/assets/33bc705a-9e5a-47ea-9ab1-d2fbdb15772d" />
+
+
+
+
