@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
+import axios from 'axios';
 
 function Chat({ roomId, currentUserId, currentUserName, otherUserName }) {
     // State
@@ -10,7 +11,30 @@ function Chat({ roomId, currentUserId, currentUserName, otherUserName }) {
     // Refs
     const socketRef = useRef(null);
     const messagesEndRef = useRef(null);
+    useEffect(() => {
+        const loadChatHistory = async () => {
+            try {
+                const response = await axios.get(`http://localhost:5000/api/owner/chat-history/${roomId}`);
 
+                if (response.data.success) {
+                    const history = response.data.history.map(msg => ({
+                        id: msg.id,
+                        text: msg.text,
+                        senderId: msg.senderId,
+                        senderName: msg.senderName,
+                        timestamp: msg.timestamp
+                    }));
+                    setMessages(history);
+                }
+            } catch (error) {
+                console.error("error when download history chat:", error);
+            }
+        };
+
+        if (roomId) {
+            loadChatHistory();
+        }
+    }, [roomId]);
     // connect Socket.io when component mount
     useEffect(() => {
         // connect to backend

@@ -68,7 +68,22 @@ router.post('/CreateNewOTPCode', async (req, res) => {
         });
     }
     });
+router.get('/chat-history/:roomId', async (req, res) => {
+    try {
+        const { roomId } = req.params;
+        const snapshot = await db.collection('chats').doc(roomId)
+            .collection('messages')
+            .orderBy('timestamp', 'asc')
+            .get();
 
+        const history = [];
+        snapshot.forEach(doc => history.push({ id: doc.id, ...doc.data() }));
+
+        res.json({ success: true, history });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
 //validate OTP code
 router.post('/ValidateOTPCode',async (req,res)=> {
     try {
@@ -442,6 +457,35 @@ router.post('/UpdateEmployee', async (req, res) => {
 router.get('/test', (req, res) => {
     res.json({ message: 'Owner routes working!' });
 });
+router.get('/chat-history/:roomId', async (req, res) => {
+    try {
+        const { roomId } = req.params;
+        const snapshot = await db.collection('chats')
+            .doc(roomId)
+            .collection('messages')
+            .orderBy('timestamp', 'asc')
+            .get();
 
+        const history = [];
+        snapshot.forEach(doc => {
+            history.push({
+                id: doc.id,
+                ...doc.data()
+            });
+        });
+
+        res.json({
+            success: true,
+            history: history
+        });
+    } catch (error) {
+        console.error('[ChatHistory Error]:', error);
+        res.status(500).json({
+            success: false,
+            message: 'can not download history chat',
+            error: error.message
+        });
+    }
+});
 
 module.exports = router;

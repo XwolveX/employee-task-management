@@ -4,6 +4,7 @@ const cors = require('cors');
 const http = require('http');
 const socketIo = require('socket.io');
 require('dotenv').config();
+const { db } = require('./config/firebase');
 
 const app = express();
 const server = http.createServer(app);
@@ -29,12 +30,26 @@ io.on('connection',(socket) => {
         console.log(`User ${socket.id} join room: ${roomId}`);
         });
 
-    socket.on('send_message', (data) => {
-        console.log('Message received on server:', data);
-        if (data.room) {
-            io.to(data.room).emit('receive_message', data);
-        } else {
-            console.log('Error: No room specified in message data');
+    socket.on('send_message', async (data) => {
+        try {
+            const { room, message, senderId, senderName, timestamp } = data;
+
+            await db.collection('chats').doc(room).collection('messages').add({
+                senderId,
+                senderName,
+                text: message,
+                timestamp: timestamp || new Date().toISOString()
+            });
+
+            await db.collection('chats').doc(room).set({
+                lastMessage: message,
+                updatedAt: new Date().toISOString(),
+                employeeId: room.replace('chat_room_', '')
+            }, { merge: true });
+
+            io.to(room).emit('receive_message', data);
+        } catch (error) {
+            console.error('Error saving to Firebase:', error);
         }
     });
     socket.on('disconnect', () => {
