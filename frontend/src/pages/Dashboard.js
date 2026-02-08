@@ -177,7 +177,14 @@ function Dashboard() {
         emp.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.department.toLowerCase().includes(searchTerm.toLowerCase())
     );
-
+    const allTasks = employees.reduce((acc, emp) => {
+        const empTasks = (emp.tasks || []).map(task => ({
+            ...task,
+            employeeName: emp.name,
+            employeeEmail: emp.email
+        }));
+        return [...acc, ...empTasks];
+    }, []);
     return (
         <div style={styles.container}>
             {/* Header */}
@@ -401,6 +408,33 @@ function Dashboard() {
                     </table>
                 )}
             </div>
+            <div style={{...styles.tableContainer, marginTop: '30px'}}>
+                <h2>Task Overview</h2>
+                <table style={styles.table}>
+                    <thead>
+                    <tr>
+                        <th style={styles.th}>Employee</th>
+                        <th style={styles.th}>Task Title</th>
+                        <th style={styles.th}>Deadline</th>
+                        <th style={styles.th}>Status</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {allTasks.map((task) => (
+                        <tr key={task.taskId} style={styles.tr}>
+                            <td style={styles.td}>{task.employeeName}</td>
+                            <td style={styles.td}>{task.title}</td>
+                            <td style={styles.td}>{new Date(task.deadline).toLocaleDateString()}</td>
+                            <td style={styles.td}>
+                        <span style={getStatusStyle(task.status)}>
+                            {task.status.toUpperCase()}
+                        </span>
+                            </td>
+                        </tr>
+                    ))}
+                    </tbody>
+                </table>
+            </div>
             {/* Chat Modal */}
             {showChat && selectedEmployee && (
                 <div style={styles.chatModal}>
@@ -424,7 +458,15 @@ function Dashboard() {
         </div>
     );
 }
-
+const getStatusStyle = (status) => ({
+    padding: '4px 8px',
+    borderRadius: '4px',
+    fontSize: '12px',
+    fontWeight: 'bold',
+    backgroundColor: status === 'completed' ? '#e8f5e9' : '#fff3e0',
+    color: status === 'completed' ? '#2e7d32' : '#f57c00',
+    display: 'inline-block'
+});
 // Styles
 const styles = {
     container: {
