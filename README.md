@@ -37,7 +37,6 @@ CHECK you log of backend to get OTP code for sms and mail if dont use twilio and
     npm install
 
     Environment Setup: Create a .env file in the backend/ folder. Based on the source code, you should define your server port and Firebase credentials here.
-    Đoạn mã
 
     PORT=5000
     # Add your Firebase Service Account configuration here
