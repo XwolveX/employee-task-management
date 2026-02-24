@@ -22,7 +22,7 @@ export const ownerAPI = {
     },
 
     // Create new employee
-    createEmployee: (name, email, department) => {
+    createEmployee: (name, email, department, ownerId) => {
         return axios.post(`${API_BASE_URL}/owner/CreateEmployee`, {
             name,
             email,
@@ -32,8 +32,8 @@ export const ownerAPI = {
     },
 
     // get all employees
-    getAllEmployees: () => {
-        return axios.get(`${API_BASE_URL}/owner/GetAllEmployees`, {
+    getAllEmployees: (ownerId) => {
+        return axios.post(`${API_BASE_URL}/owner/GetAllEmployees`, {
                 ownerId
             });
     },
