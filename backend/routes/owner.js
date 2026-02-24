@@ -202,7 +202,7 @@ router.post('/ValidateOTPCode',async (req,res)=> {
 router.post('/CreateEmployee', async (req, res) => {
     try {
         // Get data from request
-        const { name, email, department } = req.body;
+        const { name, email, department, ownerId } = req.body;
 
         // Validate required fields
         if (!name || !email || !department) {
@@ -240,6 +240,7 @@ router.post('/CreateEmployee', async (req, res) => {
         // Save employee to Firebase
         await db.collection('employees').doc(employeeId).set({
             employeeId: employeeId,
+            ownerId: ownerId,
             name: name.trim(),
             email: email.toLowerCase(),
             department: department.trim(),
@@ -327,9 +328,19 @@ router.post('/GetEmployee', async (req, res) => {
     }
 });
 
-router.get('/GetAllEmployees', async (req, res) => {
+router.post('/GetAllEmployees', async (req, res) => {
     try {
-        const snapshot = await db.collection('employees').get();
+        const { ownerId } = req.body;
+        if (!ownerId) {
+            return res.status(400).json({
+                success: false,
+                message: 'ownerId is required'
+            });
+        }
+
+        const snapshot = await db.collection('employees')
+            .where('ownerId', '==', ownerId)
+            .get();
 
         const employees = [];
 

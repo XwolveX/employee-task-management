@@ -26,13 +26,16 @@ export const ownerAPI = {
         return axios.post(`${API_BASE_URL}/owner/CreateEmployee`, {
             name,
             email,
-            department
+            department,
+            ownerId
         });
     },
 
     // get all employees
     getAllEmployees: () => {
-        return axios.get(`${API_BASE_URL}/owner/GetAllEmployees`);
+        return axios.get(`${API_BASE_URL}/owner/GetAllEmployees`, {
+                ownerId
+            });
     },
 
     // Get 1 employee

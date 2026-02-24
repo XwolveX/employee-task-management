@@ -39,7 +39,8 @@ function Dashboard() {
     const fetchEmployees = async () => {
         setIsLoading(true);
         try {
-            const response = await ownerAPI.getAllEmployees();
+            const ownerId = localStorage.getItem('userPhone');
+            const response = await ownerAPI.getAllEmployees(ownerId);
 
             if (response.data.success) {
                 setEmployees(response.data.employees);
@@ -64,11 +65,13 @@ function Dashboard() {
         }
 
         try {
+            const ownerId = localStorage.getItem('userPhone');
             const response = await ownerAPI.createEmployee(
                 formData.name,
                 formData.email,
-                formData.department
-            );
+                formData.department,
+                ownerId
+        );
 
             if (response.data.success) {
                 alert('Employee created successfully!\nSetup link: ' + response.data.setupLink);
