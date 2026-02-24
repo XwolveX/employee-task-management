@@ -4,12 +4,20 @@ const { db } = require('../config/firebase');
 const twilio = require('twilio');
 const nodemailer = require('nodemailer');
 const { v4: uuidv4 } = require('uuid');
+const Nexmo = require('nexmo');
 
-//setup twilio
-const twilioClient = twilio(
-    process.env.TWILIO_SID,
-    process.env.TWILIO_AUTH_TOKEN
-);
+// Setup Nexmo (Legacy Vonage)
+const nexmo = new Nexmo({
+    apiKey: process.env.VONAGE_API_KEY,
+    apiSecret: process.env.VONAGE_API_SECRET
+});
+
+// setup twilio
+// const twilioClient = twilio(
+//     process.env.TWILIO_SID,
+//     process.env.TWILIO_AUTH_TOKEN
+// );
+
 //setup mail
 const emailTransporter = nodemailer.createTransport({
     service: 'gmail',
@@ -44,30 +52,58 @@ router.post('/CreateNewOTPCode', async (req, res) => {
             createdAt: new Date().toISOString(),
             expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString()
         });
+
         // await twilioClient.messages.create({
         //     body: `your otp code is: ${otpCode}. it will expire in 5 minutes.`,
         //     from: process.env.TWILIO_PHONE,
         //     to: phoneNumber
         // });
-        console.log(`📱 [MOCK SMS] To: ${phoneNumber}, Code: ${otpCode}`);
+
+        // Send SMS via Nexmo
+        const cleanPhone = phoneNumber.replace('+', '');
+
+        nexmo.message.sendSms(
+            'EmpManager',
+            cleanPhone,
+            `Your verify code is: ${otpCode}. Valid for 5 minutes.`,
+            (err, responseData) => {
+                if (err) {
+                    console.error('[Nexmo SMS Error]:', err);
+                    console.log('[FALLBACK - MOCK SMS]');
+                    console.log('To:', phoneNumber);
+                    console.log('Code:', otpCode);
+                } else {
+                    if (responseData.messages[0]['status'] === "0") {
+                        console.log('[Nexmo SMS] Sent Successfully');
+                        console.log('To:', phoneNumber);
+                        console.log('Code:', otpCode);
+                        console.log('Message ID:', responseData.messages[0]['message-id']);
+                    } else {
+                        console.error('[Nexmo Error]:', responseData.messages[0]['error-text']);
+                        console.log('[FALLBACK - MOCK SMS]');
+                        console.log('To:', phoneNumber);
+                        console.log('Code:', otpCode);
+                    }
+                }
+            }
+        );
+
         res.json({
             success: true,
-            message: 'the Otp code has sent to your phone'
+            message: 'OTP code has been sent to your phone'
         });
+
     } catch (error) {
-        if (error.code === 21211) {
-            return res.status(400).json({
-                success: false,
-                message: 'your phone number is not available'
-            });
-        }
+        console.error('[CreateOTPCode Error]:', error);
         res.status(500).json({
             success: false,
-            message: 'something when wrong',
+            message: 'something went wrong',
             error: error.message
         });
     }
-    });
+});
+
+
 router.get('/chat-history/:roomId', async (req, res) => {
     try {
         const { roomId } = req.params;
@@ -217,18 +253,18 @@ router.post('/CreateEmployee', async (req, res) => {
         const setupLink = `http://localhost:3000/employee/setup/${setupToken}`;
 
         // Send email (MOCK for testing)
-        // await emailTransporter.sendMail({
-        //     from: process.env.EMAIL_USER,
-        //     to: email,
-        //     subject: 'Welcome! Setup your account',
-        //     html: `
-        //         <h2>Welcome ${name}!</h2>
-        //         <p>You have been added to Employee Management System.</p>
-        //         <p>Click the link below to setup your account:</p>
-        //         <a href="${setupLink}">Setup Account</a>
-        //         <p>Department: ${department}</p>
-        //     `
-        // });
+        await emailTransporter.sendMail({
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'Welcome! Setup your account',
+            html: `
+                <h2>Welcome ${name}!</h2>
+                <p>You have been added to Employee Management System.</p>
+                <p>Click the link below to setup your account:</p>
+                <a href="${setupLink}">Setup Account</a>
+                <p>Department: ${department}</p>
+            `
+        });
 
         console.log(`[MOCK EMAIL] To: ${email}`);
         console.log(`Setup Link: ${setupLink}`);

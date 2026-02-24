@@ -208,7 +208,7 @@ function Dashboard() {
                 </button>
                 <input
                     type="text"
-                    placeholder="🔍 Search name, e   mail or department..."
+                    placeholder="🔍 Search name, email or department..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     style={styles.searchInput}

@@ -1,1 +1,6 @@
-GET http://localhost:5000/api/owner/GetAllEmployees
+POST http://localhost:5000/api/owner/CreateNewOTPCode
+Content-Type: application/json
+
+{
+  "phoneNumber": "+84901234567"
+}
