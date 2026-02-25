@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
-
 const {db} = require('../config/firebase');
 const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
+const { generateToken, requireEmployee } = require('../middleware/auth');
 
 //setup mail
 const emailTransporter = nodemailer.createTransport({
@@ -177,10 +177,17 @@ router.post('/ValidateOTPCode', async (req, res) => {
                 OTPCode: '',
                 lastLogin: new Date().toISOString()
             });
+            const token = generateToken({
+                employeeId: employeeData.employeeId,
+                email: employeeData.email,
+                role: 'employee'
+            });
+
             console.log(`[EmployeeLogin] Login successfully: ${email}`);// test log
             return res.json({
                 success: true,
                 message: 'Login successfully',
+                token: token,
                 data: {
                     employeeId: employeeData.employeeId,
                     name: employeeData.name,
@@ -206,16 +213,10 @@ router.post('/ValidateOTPCode', async (req, res) => {
         }
     });
 
-router.post('/GetProfile', async (req, res) => {
+router.post('/GetProfile', requireEmployee, async (req, res) => {
     try {
-        const { employeeId } = req.body;
+        const employeeId = req.user.employeeId;
 
-        if (!employeeId ) {
-            return res.status(400).json({
-                success: false,
-                message: 'employeeId is missing'
-            });
-        }
         const doc = await db.collection('employees').doc(employeeId).get();
         if (!doc.exists) {
             return res.status(404).json({
@@ -251,16 +252,11 @@ router.post('/GetProfile', async (req, res) => {
     }
 });
 
-router.post('/UpdateProfile', async (req, res) => {
+router.post('/UpdateProfile', requireEmployee, async (req, res) => {
     try {
-        const { employeeId, name, email, department } = req.body;
+        const employeeId = req.user.employeeId; // get from JWT
+        const { name, email, department } = req.body;
 
-        if (!employeeId) {
-            return res.status(400).json({
-                success: false,
-                message: 'employeeId is missing'
-            });
-        }
         //check if employee is exits or not
         const doc = await db.collection('employees').doc(employeeId).get();
 
@@ -342,12 +338,9 @@ router.get('/test', (req, res) => {
     res.json({ message: 'Employee routes working' });
 });
 // Get all tasks for a specific employee
-router.post('/GetTasks', async (req, res) => {
+router.post('/GetTasks', requireEmployee, async (req, res) => {
     try {
-        const { employeeId } = req.body;
-        if (!employeeId) {
-            return res.status(400).json({ success: false, message: 'Missing employeeId' });
-        }
+        const employeeId = req.user.employeeId;
 
         const doc = await db.collection('employees').doc(employeeId).get();
         if (!doc.exists) {
@@ -362,9 +355,10 @@ router.post('/GetTasks', async (req, res) => {
 });
 
 // Update status of a specific task
-router.post('/UpdateTaskStatus', async (req, res) => {
+router.post('/UpdateTaskStatus',  requireEmployee,async (req, res) => {
     try {
-        const { employeeId, taskId, status } = req.body;
+        const employeeId = req.user.employeeId;
+        const { taskId, status } = req.body;
 
         const employeeRef = db.collection('employees').doc(employeeId);
         const doc = await employeeRef.get();

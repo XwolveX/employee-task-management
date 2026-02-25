@@ -26,12 +26,12 @@ function Dashboard() {
 
     // Load employees when component mount
     useEffect(() => {
-        // Check login
-        if (!userPhone) {
+        // check token
+        const token = localStorage.getItem('token');
+        if (!token || !userPhone) {
             navigate('/owner/login');
             return;
         }
-
         fetchEmployees();
     }, []);
 
@@ -39,8 +39,7 @@ function Dashboard() {
     const fetchEmployees = async () => {
         setIsLoading(true);
         try {
-            const ownerId = localStorage.getItem('userPhone');
-            const response = await ownerAPI.getAllEmployees(ownerId);
+            const response = await ownerAPI.getAllEmployees();
 
             if (response.data.success) {
                 setEmployees(response.data.employees);
@@ -65,12 +64,10 @@ function Dashboard() {
         }
 
         try {
-            const ownerId = localStorage.getItem('userPhone');
             const response = await ownerAPI.createEmployee(
                 formData.name,
                 formData.email,
-                formData.department,
-                ownerId
+                formData.department
         );
 
             if (response.data.success) {
@@ -170,6 +167,7 @@ function Dashboard() {
 
     // Function: Logout
     const handleLogout = () => {
+        localStorage.removeItem('token');//clear token when log out
         localStorage.removeItem('userPhone');
         localStorage.removeItem('userRole');
         navigate('/owner/login');

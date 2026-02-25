@@ -67,10 +67,11 @@ function EmployeeLogin() {
 
             if (response.data.success) {
                 // Save employee info to localStorage
-                const employeeData = response.data.data;
-                localStorage.setItem('employeeId', employeeData.employeeId);
-                localStorage.setItem('employeeName', employeeData.name);
-                localStorage.setItem('employeeEmail', employeeData.email);
+                const { token, data } = response.data;
+                localStorage.setItem('token', token);
+                localStorage.setItem('employeeId', data.employeeId);
+                localStorage.setItem('employeeName', data.name);
+                localStorage.setItem('employeeEmail', data.email);
                 localStorage.setItem('userRole', 'employee');
 
                 // Navigate to employee dashboard

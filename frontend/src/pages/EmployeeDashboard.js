@@ -21,11 +21,11 @@ function EmployeeDashboard() {
 
     // Load profile
     useEffect(() => {
-        if (!employeeId) {
+        const token = localStorage.getItem('token');
+        if (!token || !employeeId) {
             navigate('/employee/login');
             return;
         }
-
         fetchProfile();
     }, []);
 
@@ -33,19 +33,18 @@ function EmployeeDashboard() {
     const fetchProfile = async () => {
         setIsLoading(true);
         try {
-            const response = await employeeAPI.getProfile(employeeId);
-            const tasksResponse = await employeeAPI.getTasks(employeeId);
-            if (response.data.success) {
-                const emp = response.data.employee;
+            const [profileRes, tasksRes] = await Promise.all([
+                employeeAPI.getProfile(),
+                employeeAPI.getTasks()
+            ]);
+
+            if (profileRes.data.success) {
+                const emp = profileRes.data.employee;
                 setProfile(emp);
-                setFormData({
-                    name: emp.name,
-                    email: emp.email,
-                    department: emp.department
-                });
+                setFormData({ name: emp.name, email: emp.email, department: emp.department });
             }
-            if (tasksResponse.data.success) {
-                setTasks(tasksResponse.data.tasks || []);
+            if (tasksRes.data.success) {
+                setTasks(tasksRes.data.tasks || []);
             }
 
         } catch (error) {
@@ -57,7 +56,7 @@ function EmployeeDashboard() {
     };
     const handleStatusUpdate = async (taskId, newStatus) => {
         try {
-            const response = await employeeAPI.updateTaskStatus(employeeId, taskId, newStatus);
+            const response = await employeeAPI.updateTaskStatus(taskId, newStatus);
             if (response.data.success) {
                 alert(`Task marked as ${newStatus}`);
                 fetchProfile();
@@ -73,7 +72,6 @@ function EmployeeDashboard() {
 
         try {
             const response = await employeeAPI.updateProfile(
-                employeeId,
                 formData.name,
                 formData.email,
                 formData.department
@@ -108,6 +106,7 @@ function EmployeeDashboard() {
 
     // Function: Logout
     const handleLogout = () => {
+        localStorage.removeItem('token');
         localStorage.removeItem('employeeId');
         localStorage.removeItem('employeeName');
         localStorage.removeItem('employeeEmail');

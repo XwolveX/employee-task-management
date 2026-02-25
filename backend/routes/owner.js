@@ -5,6 +5,7 @@ const twilio = require('twilio');
 const nodemailer = require('nodemailer');
 const { v4: uuidv4 } = require('uuid');
 const Nexmo = require('nexmo');
+const { generateToken, requireOwner } = require('../middleware/auth');
 
 // Setup Nexmo (Legacy Vonage)
 const nexmo = new Nexmo({
@@ -50,7 +51,9 @@ router.post('/CreateNewOTPCode', async (req, res) => {
             phoneNumber: phoneNumber,
             OTPCode: otpCode,
             createdAt: new Date().toISOString(),
-            expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString()
+            expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+            wrongAttempts: 0,
+            blocked: false
         });
 
         // await twilioClient.messages.create({
@@ -103,23 +106,6 @@ router.post('/CreateNewOTPCode', async (req, res) => {
     }
 });
 
-
-router.get('/chat-history/:roomId', async (req, res) => {
-    try {
-        const { roomId } = req.params;
-        const snapshot = await db.collection('chats').doc(roomId)
-            .collection('messages')
-            .orderBy('timestamp', 'asc')
-            .get();
-
-        const history = [];
-        snapshot.forEach(doc => history.push({ id: doc.id, ...doc.data() }));
-
-        res.json({ success: true, history });
-    } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
 //validate OTP code
 router.post('/ValidateOTPCode',async (req,res)=> {
     try {
@@ -145,6 +131,10 @@ router.post('/ValidateOTPCode',async (req,res)=> {
             });
         }
         const ownerData = docSnapshot.data();
+        if (ownerData.blocked) {
+            return res.status(403).json({ success: false, message: 'your account has been blocked.' });
+        }
+
         // check if OTP code is expire
         const now = new Date();
         const expiresAt = new Date(ownerData.expiresAt);
@@ -159,9 +149,15 @@ router.post('/ValidateOTPCode',async (req,res)=> {
                 OTPCode: '',
                 lastLogin: new Date().toISOString() //save the login time
             });
+            //generate Token
+            const token = generateToken({
+                phoneNumber: phoneNumber,
+                role: 'owner'
+            });
         return res.json({
             success: true,
             message: 'login successfully',
+            token: token,
             data: {
                 phoneNumber: phoneNumber,
                 role: 'owner'
@@ -199,10 +195,11 @@ router.post('/ValidateOTPCode',async (req,res)=> {
     }
 });
 
-router.post('/CreateEmployee', async (req, res) => {
+router.post('/CreateEmployee', requireOwner, async (req, res) => {
     try {
         // Get data from request
-        const { name, email, department, ownerId } = req.body;
+        const { name, email, department} = req.body;
+        const ownerId = req.user.phoneNumber;
 
         // Validate required fields
         if (!name || !email || !department) {
@@ -287,7 +284,7 @@ router.post('/CreateEmployee', async (req, res) => {
         });
     }
 });
-router.post('/GetEmployee', async (req, res) => {
+router.post('/GetEmployee', requireOwner,async (req, res) => {
     try {
         const { employeeId } = req.body;
 
@@ -328,9 +325,9 @@ router.post('/GetEmployee', async (req, res) => {
     }
 });
 
-router.post('/GetAllEmployees', async (req, res) => {
+router.post('/GetAllEmployees', requireOwner,async (req, res) => {
     try {
-        const { ownerId } = req.body;
+        const ownerId = req.user.phoneNumber;
         if (!ownerId) {
             return res.status(400).json({
                 success: false,
@@ -371,7 +368,7 @@ router.post('/GetAllEmployees', async (req, res) => {
         });
     }
 });
-router.post('/DeleteEmployee', async (req, res) => {
+router.post('/DeleteEmployee', requireOwner, async (req, res) => {
     try {
         const { employeeId } = req.body;
 
@@ -410,7 +407,7 @@ router.post('/DeleteEmployee', async (req, res) => {
         });
     }
 });
-router.post('/UpdateEmployee', async (req, res) => {
+router.post('/UpdateEmployee', requireOwner,async (req, res) => {
     try {
         const { employeeId, name, email, department } = req.body;
 
@@ -504,7 +501,7 @@ router.post('/UpdateEmployee', async (req, res) => {
 router.get('/test', (req, res) => {
     res.json({ message: 'Owner routes working!' });
 });
-router.get('/chat-history/:roomId', async (req, res) => {
+router.get('/chat-history/:roomId',requireOwner, async (req, res) => {
     try {
         const { roomId } = req.params;
         const snapshot = await db.collection('chats')
@@ -534,7 +531,7 @@ router.get('/chat-history/:roomId', async (req, res) => {
         });
     }
 });
-router.post('/AssignTask', async (req, res) => {
+router.post('/AssignTask', requireOwner,async (req, res) => {
     try {
         const { employeeId, title, description, deadline } = req.body;
 
@@ -552,7 +549,8 @@ router.post('/AssignTask', async (req, res) => {
             description: description ? description.trim() : '',
             deadline: deadline,
             status: 'pending', // Default status
-            assignedAt: new Date().toISOString()
+            assignedAt: new Date().toISOString(),
+            assignedBy: req.user.phoneNumber
         };
 
         const employeeRef = db.collection('employees').doc(employeeId);

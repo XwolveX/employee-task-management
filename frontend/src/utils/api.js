@@ -4,6 +4,42 @@ import axios from 'axios';
 //Backend base URL
 const API_BASE_URL = 'http://localhost:5000/api';
 
+const api = axios.create({
+    baseURL: API_BASE_URL,
+});
+
+api.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            config.headers['Authorization'] = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => Promise.reject(error)
+);
+// handle token expired (401)
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401) {
+            const code = error.response?.data?.code;
+            if (code === 'TOKEN_EXPIRED' || code === 'TOKEN_INVALID') {
+                localStorage.clear();
+
+                // Redirect
+                const role = localStorage.getItem('userRole');
+                if (role === 'employee') {
+                    window.location.href = '/employee/login';
+                } else {
+                    window.location.href = '/owner/login';
+                }
+            }
+        }
+        return Promise.reject(error);
+    }
+);
+
 // OWNER APIs
 export const ownerAPI = {
     // Generate OTP and send SMS
@@ -22,39 +58,36 @@ export const ownerAPI = {
     },
 
     // Create new employee
-    createEmployee: (name, email, department, ownerId) => {
-        return axios.post(`${API_BASE_URL}/owner/CreateEmployee`, {
+    createEmployee: (name, email, department) => {
+        return api.post(`/owner/CreateEmployee`, {
             name,
             email,
-            department,
-            ownerId
+            department
         });
     },
 
     // get all employees
-    getAllEmployees: (ownerId) => {
-        return axios.post(`${API_BASE_URL}/owner/GetAllEmployees`, {
-                ownerId
-            });
+    getAllEmployees: () => {
+        return api.post(`/owner/GetAllEmployees`, {});
     },
 
     // Get 1 employee
     getEmployee: (employeeId) => {
-        return axios.post(`${API_BASE_URL}/owner/GetEmployee`, {
+        return api.post(`/owner/GetEmployee`, {
             employeeId
         });
     },
 
     // Delete employee
     deleteEmployee: (employeeId) => {
-        return axios.post(`${API_BASE_URL}/owner/DeleteEmployee`, {
+        return api.post(`/owner/DeleteEmployee`, {
             employeeId
         });
     },
 
     // Update employee
     updateEmployee: (employeeId, name, email, department) => {
-        return axios.post(`${API_BASE_URL}/owner/UpdateEmployee`, {
+        return api.post(`/owner/UpdateEmployee`, {
             employeeId,
             name,
             email,
@@ -63,7 +96,7 @@ export const ownerAPI = {
     },
     // Assign task
     assignTask: (employeeId, title, description, deadline) => {
-        return axios.post(`${API_BASE_URL}/owner/AssignTask`, {
+        return api.post(`/owner/AssignTask`, {
             employeeId,
             title,
             description,
@@ -99,32 +132,26 @@ export const employeeAPI = {
     },
 
     // get profile
-    getProfile: (employeeId) => {
-        return axios.post(`${API_BASE_URL}/employee/GetProfile`, {
-            employeeId
-        });
+    getProfile: () => {
+        return api.post(`/employee/GetProfile`, {});
     },
 
     // update profile
-    updateProfile: (employeeId, name, email, department) => {
-        return axios.post(`${API_BASE_URL}/employee/UpdateProfile`, {
-            employeeId,
+    updateProfile: (name, email, department) => {
+        return api.post(`/employee/UpdateProfile`, {
             name,
             email,
             department
         });
     },
     //get task
-    getTasks: (employeeId) => {
-        return axios.post(`${API_BASE_URL}/employee/GetTasks`, {
-            employeeId
-        });
+    getTasks: () => {
+        return api.post(`/employee/GetTasks`, {});
     },
 
     // Update the status of a specific task
-    updateTaskStatus: (employeeId, taskId, newStatus) => {
-        return axios.post(`${API_BASE_URL}/employee/UpdateTaskStatus`, {
-            employeeId,
+    updateTaskStatus: (taskId, newStatus) => {
+        return api.post(`/employee/UpdateTaskStatus`, {
             taskId,
             status: newStatus
         });

@@ -73,6 +73,7 @@ function OwnerLogin() {
 
             if (response.data.success) {
                 // Save to localStorage
+                localStorage.setItem('token', response.data.token);
                 localStorage.setItem('userPhone', phoneNum);
                 localStorage.setItem('userRole', 'owner');
 
