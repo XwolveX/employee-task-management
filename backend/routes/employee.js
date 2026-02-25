@@ -3,7 +3,7 @@ const router = express.Router();
 const {db} = require('../config/firebase');
 const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
-const { generateToken, requireEmployee } = require('../middleware/auth');
+const { generateToken, requireEmployee, requireOwner} = require('../middleware/auth');
 
 //setup mail
 const emailTransporter = nodemailer.createTransport({
@@ -377,6 +377,26 @@ router.post('/UpdateTaskStatus',  requireEmployee,async (req, res) => {
         await employeeRef.update({ tasks });
         res.json({ success: true, message: 'Status updated' });
     } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+router.get('/chat-history/:roomId', requireEmployee, async (req, res) => {
+    try {
+        const { roomId } = req.params;
+        const snapshot = await db.collection('chats')
+            .doc(roomId)
+            .collection('messages')
+            .orderBy('timestamp', 'asc')
+            .get();
+
+        const history = [];
+        snapshot.forEach(doc => {
+            history.push({ id: doc.id, ...doc.data() });
+        });
+
+        res.json({ success: true, history });
+    } catch (error) {
+        console.error('[ChatHistory Employee Error]:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });

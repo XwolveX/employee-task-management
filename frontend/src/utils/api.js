@@ -25,10 +25,11 @@ api.interceptors.response.use(
         if (error.response?.status === 401) {
             const code = error.response?.data?.code;
             if (code === 'TOKEN_EXPIRED' || code === 'TOKEN_INVALID') {
+                // Save role before clear
+                const role = localStorage.getItem('userRole');
                 localStorage.clear();
 
                 // Redirect
-                const role = localStorage.getItem('userRole');
                 if (role === 'employee') {
                     window.location.href = '/employee/login';
                 } else {
@@ -102,7 +103,9 @@ export const ownerAPI = {
             description,
             deadline
         });
-    }
+    },
+    getChatHistory: (roomId) =>
+        api.get(`/owner/chat-history/${roomId}`),
 };
 
 // EMPLOYEE APIs
@@ -155,5 +158,7 @@ export const employeeAPI = {
             taskId,
             status: newStatus
         });
-    }
+    },
+    getChatHistory: (roomId) =>
+        api.get(`/employee/chat-history/${roomId}`),
 };

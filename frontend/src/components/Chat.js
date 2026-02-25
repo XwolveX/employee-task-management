@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
-import { ownerAPI } from '../utils/api';
+import { ownerAPI, employeeAPI } from '../utils/api';
 
 function Chat({ roomId, currentUserId, currentUserName, otherUserName }) {
     const [messages, setMessages] = useState([]);
@@ -10,11 +10,14 @@ function Chat({ roomId, currentUserId, currentUserName, otherUserName }) {
     const socketRef = useRef(null);
     const messagesEndRef = useRef(null);
 
-    // Load chat history
+    // Load chat history - Role Option
     useEffect(() => {
         const loadChatHistory = async () => {
             try {
-                const response = await ownerAPI.getChatHistory(roomId);
+                const role = localStorage.getItem('userRole');
+                const response = role === 'employee'
+                    ? await employeeAPI.getChatHistory(roomId)
+                    : await ownerAPI.getChatHistory(roomId);
 
                 if (response.data.success) {
                     const history = response.data.history.map(msg => ({
@@ -27,7 +30,7 @@ function Chat({ roomId, currentUserId, currentUserName, otherUserName }) {
                     setMessages(history);
                 }
             } catch (error) {
-                console.error("error when download history chat:", error);
+                console.error("Error loading chat history:", error);
             }
         };
 
@@ -36,7 +39,7 @@ function Chat({ roomId, currentUserId, currentUserName, otherUserName }) {
         }
     }, [roomId]);
 
-    // Connect Socket.io
+    // Connect Socket.io with token
     useEffect(() => {
         const token = localStorage.getItem('token');
         socketRef.current = io('http://localhost:5000', {
@@ -55,7 +58,7 @@ function Chat({ roomId, currentUserId, currentUserName, otherUserName }) {
         });
 
         socketRef.current.on('receive_message', (data) => {
-            setMessages((prevMessages) => [...prevMessages, {
+            setMessages((prev) => [...prev, {
                 id: Date.now(),
                 text: data.message,
                 senderId: data.senderId,
@@ -76,7 +79,6 @@ function Chat({ roomId, currentUserId, currentUserName, otherUserName }) {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    // Send message
     const handleSendMessage = (e) => {
         e.preventDefault();
         if (!inputMessage.trim() || !isConnected) return;
